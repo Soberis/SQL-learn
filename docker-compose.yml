@@ -1,0 +1,86 @@
+version: '3.8'
+
+services:
+  # PostgreSQL数据库
+  postgres:
+    image: postgres:15-alpine
+    container_name: sql-learn-db
+    environment:
+      POSTGRES_DB: sqllearn_db
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./apps/backend/init.sql:/docker-entrypoint-initdb.d/init.sql
+    networks:
+      - sql-learn-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # 后端API服务
+  backend:
+    build:
+      context: ./apps/backend
+      dockerfile: Dockerfile
+    container_name: sql-learn-backend
+    environment:
+      DATABASE_URL: postgresql://postgres:postgres@postgres:5432/sqllearn_db
+      SECRET_KEY: your-secret-key-change-this-in-production
+      DEBUG: "true"
+      ALLOWED_ORIGINS: http://localhost:5173,http://frontend:5173
+    ports:
+      - "8000:8000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    volumes:
+      - ./apps/backend:/app
+    networks:
+      - sql-learn-network
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+
+  # 前端服务
+  frontend:
+    build:
+      context: ./apps/frontend
+      dockerfile: Dockerfile
+    container_name: sql-learn-frontend
+    environment:
+      VITE_API_URL: http://localhost:8000
+    ports:
+      - "5173:5173"
+    depends_on:
+      - backend
+    volumes:
+      - ./apps/frontend:/app
+      - /app/node_modules
+    networks:
+      - sql-learn-network
+    command: pnpm dev --host 0.0.0.0
+
+  # Redis缓存（可选）
+  redis:
+    image: redis:7-alpine
+    container_name: sql-learn-redis
+    ports:
+      - "6379:6379"
+    networks:
+      - sql-learn-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  postgres_data:
+    driver: local
+
+networks:
+  sql-learn-network:
+    driver: bridge
