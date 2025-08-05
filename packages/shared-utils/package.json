@@ -1,0 +1,27 @@
+{
+  "name": "@sql-learn/shared-utils",
+  "version": "1.0.0",
+  "description": "Shared utility functions for SQL Learning Platform",
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "clean": "rimraf dist",
+    "type-check": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@sql-learn/shared-types": "workspace:*"
+  },
+  "devDependencies": {
+    "typescript": "^5.8.3",
+    "rimraf": "^5.0.0"
+  },
+  "publishConfig": {
+    "access": "restricted"
+  }
+}
