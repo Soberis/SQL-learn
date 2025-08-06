@@ -57,6 +57,15 @@ const routes: RouteRecordRaw[] = [
       hideInMenu: true,
     },
   },
+  {
+    path: '/project',
+    name: 'Project',
+    component: () => import('../pages/Project.vue'),
+    meta: {
+      title: '项目实战室',
+      icon: 'Suitcase',
+    },
+  },
 ]
 
 /**

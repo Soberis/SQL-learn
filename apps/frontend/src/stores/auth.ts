@@ -81,7 +81,11 @@ export const useAuthStore = defineStore('auth', () => {
       formData.append('username', credentials.username)
       formData.append('password', credentials.password)
       
-      const response = await apiClient.post('/api/auth/login', formData)
+      const response = await apiClient.post('/api/auth/login', formData, {
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded'
+        }
+      })
       
       if (response.data) {
         const { access_token } = response.data
