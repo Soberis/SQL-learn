@@ -52,7 +52,7 @@ export const useAuthStore = defineStore('auth', () => {
     if (token) {
       try {
         isLoading.value = true
-        const response = await apiClient.get('/auth/me')
+        const response = await apiClient.get('/api/auth/me')
         if (response.data) {
           user.value = response.data
           isAuthenticated.value = true
@@ -75,22 +75,35 @@ export const useAuthStore = defineStore('auth', () => {
   const login = async (credentials: LoginRequest) => {
     try {
       isLoading.value = true
-      const response = await apiClient.post('/auth/login', credentials)
+      
+      // 创建表单数据，适配OAuth2PasswordRequestForm格式
+      const formData = new URLSearchParams()
+      formData.append('username', credentials.username)
+      formData.append('password', credentials.password)
+      
+      const response = await apiClient.post('/api/auth/login', formData)
       
       if (response.data) {
-        const { user: userData, token } = response.data
+        const { access_token } = response.data
+        
+        // 获取用户信息
+        const userResponse = await apiClient.get('/api/auth/me', {
+          headers: {
+            'Authorization': `Bearer ${access_token}`
+          }
+        })
         
         // 保存用户信息和令牌
-        user.value = userData
+        user.value = userResponse.data
         isAuthenticated.value = true
-        localStorage.setItem('token', token)
+        localStorage.setItem('token', access_token)
         
         return { success: true }
       } else {
         return { success: false, message: '登录失败' }
       }
     } catch (error: any) {
-      return { success: false, message: error.response?.data?.message || '登录过程中发生错误' }
+      return { success: false, message: error.response?.data?.detail || '登录过程中发生错误' }
     } finally {
       isLoading.value = false
     }
@@ -104,7 +117,7 @@ export const useAuthStore = defineStore('auth', () => {
   const register = async (userData: RegisterRequest) => {
     try {
       isLoading.value = true
-      const response = await apiClient.post('/auth/register', userData)
+      const response = await apiClient.post('/api/auth/register', userData)
       
       if (response.data) {
         return { success: true, message: '注册成功，请登录' }
@@ -124,7 +137,7 @@ export const useAuthStore = defineStore('auth', () => {
    */
   const logout = async () => {
     try {
-      await apiClient.post('/auth/logout')
+      await apiClient.post('/api/auth/logout')
     } catch (error) {
       console.error('登出请求失败:', error)
     } finally {
